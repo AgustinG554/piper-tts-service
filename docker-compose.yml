@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  piper-tts:
+    build: .
+    container_name: piper-tts-server
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount models directory - place your .onnx files here
+      - ./models:/app/models
+      # Mount generated audio directory - for persistent audio storage
+      - ./generated_audio:/app/generated_audio
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+    # Allow container to read process stats for CPU/memory monitoring
+    cap_add:
+      - SYS_PTRACE
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
