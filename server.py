@@ -41,8 +41,17 @@ PIPER_EXECUTABLE = "piper"  # Adjust if Piper is in a different location
 CLEANUP_INTERVAL = 300  # 5 minutes
 FILE_EXPIRY_TIME = 3600  # 1 hour in seconds
 HOST = "0.0.0.0"  # Listen on all interfaces (required for Docker)
-PUBLIC_HOST = os.getenv("PUBLIC_HOST", "localhost")  # URL accessible from outside (override for production)
 PORT = 8000
+
+# Detect public URL (Railway, render.com, or custom)
+if os.getenv("RAILWAY_PUBLIC_DOMAIN"):
+    PUBLIC_URL = f"https://{os.getenv('RAILWAY_PUBLIC_DOMAIN')}"
+elif os.getenv("RENDER_EXTERNAL_URL"):
+    PUBLIC_URL = os.getenv("RENDER_EXTERNAL_URL")
+elif os.getenv("PUBLIC_URL"):
+    PUBLIC_URL = os.getenv("PUBLIC_URL")
+else:
+    PUBLIC_URL = f"http://localhost:{PORT}"
 
 # Create directories
 AUDIO_DIR.mkdir(exist_ok=True)
@@ -436,8 +445,8 @@ async def synthesize(request: SynthesizeRequest):
             mp3_path = AUDIO_DIR / mp3_filename
             convert_wav_to_mp3(audio_path, mp3_path)
 
-            # Construct URL for MP3 file using PUBLIC_HOST (accessible from outside)
-            audio_url = f"http://{PUBLIC_HOST}:{PORT}/audio/{mp3_filename}"
+            # Construct URL for MP3 file using PUBLIC_URL (accessible from outside)
+            audio_url = f"{PUBLIC_URL}/audio/{mp3_filename}"
 
             # Get audio information
             audio_info = get_audio_info(mp3_path)
@@ -511,8 +520,8 @@ app.mount("/audio", StaticFiles(directory=str(AUDIO_DIR)), name="audio")
 if __name__ == "__main__":
     import uvicorn
     logger.info(f"Starting Piper TTS Server")
-    logger.info(f"API accessible at: http://{PUBLIC_HOST}:{PORT}")
+    logger.info(f"API accessible at: {PUBLIC_URL}")
     logger.info(f"Audio files will be stored in: {AUDIO_DIR.absolute()}")
     logger.info(f"Loading models from: {MODELS_DIR.absolute()}")
-    logger.info(f"(Set PUBLIC_HOST environment variable to change external URL)")
+    logger.info(f"(Set PUBLIC_URL environment variable to override external URL)")
     uvicorn.run(app, host=HOST, port=PORT)
