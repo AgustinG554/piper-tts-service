@@ -26,6 +26,11 @@ docker-compose down
 
 ### Running Locally
 ```bash
+# Create and activate virtual environment (recommended)
+python -m venv venv
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -34,6 +39,27 @@ python server.py
 ```
 
 Server starts at `http://localhost:8000` by default.
+
+### Testing the API
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Test synthesis (Spanish)
+curl -X POST http://localhost:8000/synthesize \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": \"Hola mundo\", \"language\": \"es\"}"
+
+# Test synthesis (English)
+curl -X POST http://localhost:8000/synthesize \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": \"Hello world\", \"language\": \"en\"}"
+
+# Test synthesis (Portuguese)
+curl -X POST http://localhost:8000/synthesize \
+  -H "Content-Type: application/json" \
+  -d "{\"text\": \"Olá mundo\", \"language\": \"pt\"}"
+```
 
 ## Configuration
 
@@ -176,9 +202,59 @@ The Dockerfile includes:
 6. **Audio Compression**: All audio converted to MP3 after generation, WAV files deleted
 7. **Unique Filenames**: UUID-based filenames prevent conflicts and allow concurrent requests
 
-## Model Requirements
+## Model Requirements and Git LFS
 
-Models must be in ONNX format from Piper voices. Download from:
-https://huggingface.co/rhasspy/piper-voices
+### Git LFS Setup
 
-Place model files in `./models/` directory following the language structure defined in `LANGUAGE_MODELS`.
+This repository uses **Git LFS** (Large File Storage) for managing .onnx model files. Before cloning or pulling model files:
+
+```bash
+# Install Git LFS (if not already installed)
+git lfs install
+
+# Track .onnx files (already configured in .gitattributes)
+git lfs track "*.onnx"
+
+# Pull LFS files after clone
+git lfs pull
+```
+
+### Model Files
+
+Models must be in ONNX format from Piper voices. The required models are:
+
+1. **Spanish (Mexico)**: `es/es_MX-claude-high.onnx`
+   - Download: https://huggingface.co/rhasspy/piper-voices/tree/main/es/es_MX/claude/high
+
+2. **English (UK)**: `en/en_GB-cori-high.onnx`
+   - Download: https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_GB/cori/high
+
+3. **Portuguese (Brazil)**: `pt/pt_BR-cadu-medium.onnx`
+   - Download: https://huggingface.co/rhasspy/piper-voices/tree/main/pt/pt_BR/cadu/medium
+
+Place model files in `./models/` directory following this structure:
+```
+models/
+├── es/
+│   └── es_MX-claude-high.onnx
+├── en/
+│   └── en_GB-cori-high.onnx
+└── pt/
+    └── pt_BR-cadu-medium.onnx
+```
+
+### Adding Model Files to Git
+
+When adding new .onnx model files to the repository:
+
+```bash
+# Ensure Git LFS is tracking .onnx files
+git lfs track "*.onnx"
+
+# Add and commit the model files
+git add models/
+git commit -m "Add Piper TTS models via Git LFS"
+
+# Push (LFS will handle large files automatically)
+git push
+```
