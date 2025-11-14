@@ -22,11 +22,15 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application code and model downloader
 COPY server.py .
+COPY download_models.py .
 
 # Copy model files (LFS files will be included if properly checked out)
 COPY models models
+
+# Download models from HuggingFace if LFS files are not available
+RUN python download_models.py
 
 # Create directory for audio
 RUN mkdir -p /app/generated_audio
